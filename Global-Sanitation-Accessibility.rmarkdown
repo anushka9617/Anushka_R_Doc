@@ -1,0 +1,101 @@
+---
+title: "Global Growth Story of Sanitation Accessibility (2000-2020).qmd"
+author: "Anushka"
+format: html
+echo: false
+message: false
+warning: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+my_data1 <- read.csv("Metadata - USER.csv")
+my_data2 <- read.csv("Indicator 01 -USER.csv")
+```
+
+## **World Map**
+
+```{r}
+
+install.packages("tidyverse")
+library("tidyverse")
+install.packages("ggplot2")
+library("ggplot2")
+
+library(dplyr)
+
+my_obs_array1 <- my_data1 %>%
+  select(country, year, Population, GDP.per.capita, Life.expectancy.at.birth.total, Military.expenditure) %>%
+  filter(GDP.per.capita < 5000 & Life.expectancy.at.birth.total < 65) %>%
+  arrange(Population) 
+
+my_obs_array2 <- my_data2 %>%
+  select(country, indicator, time_period, obs_value) %>%
+  rename(year = time_period) %>%
+  arrange(obs_value)
+
+str(my_data1)
+str(my_data2)
+merge_data1 <- merge(my_obs_array1, my_obs_array2, by = c("country", "year"))
+
+  # Install dplyr package if not already installed
+  if (!requireNamespace("dplyr", quietly = TRUE)) {
+    install.packages("dplyr")
+  }
+  # Load the dplyr package
+  library(dplyr)
+  
+  # Install and load necessary packages
+  if (!requireNamespace("sf", quietly = TRUE)) {
+    install.packages("sf")
+  }
+  if (!requireNamespace("rnaturalearth", quietly = TRUE)) {
+    install.packages("rnaturalearth")
+  }
+  if (!requireNamespace("rnaturalearthdata", quietly = TRUE)) {
+    install.packages("rnaturalearthdata")
+  }
+  
+  install.packages("plotly")
+
+  library(sf)
+  library(ggplot2)
+  library(plotly)
+  library(rnaturalearth)
+  library(rnaturalearthdata)
+  
+  # Load viridis package for additional color palettes
+  install.packages("viridis")
+  library(viridis)
+
+  # Get a spatial dataset of country boundaries
+  world_map <- ne_countries(scale = "medium", returnclass = "sf")
+  
+  # Assign the main dataset to a new variable with a simpler name
+  main_data <- `merge_data1`
+  
+  # Merge the main dataset (main_data) with the world_map dataset
+  merged_data <- world_map %>%
+    left_join(main_data, by = c("name" = "country"))
+  
+  # Create a custom red color palette
+  red_palette <- colorRampPalette(c("#FFC0CB", "#8B0000"))
+  
+  # Create a ggplot object with merged_data
+  world_map_plot <- ggplot(data = merged_data) +
+    geom_sf(aes(fill = obs_value, text = paste("Obs_value:", obs_value, "<br>Country:", name)), size = 0.1) +
+    theme_minimal() +
+    scale_fill_gradientn(colors = red_palette(100),
+                         trans = "log", 
+                         name = "Observation\nValue", labels = scales::comma) +
+    labs()
+  
+  # Convert to interactive plotly object
+  interactive_world_map <- ggplotly(world_map_plot)
+  
+  # Include the interactive plot in R Markdown document
+  interactive_world_map
+```
+

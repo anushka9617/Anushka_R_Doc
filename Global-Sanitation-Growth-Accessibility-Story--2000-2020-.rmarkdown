@@ -1,0 +1,155 @@
+---
+title: "Global Sanitation Accessibility Growth Story (2000-2020)"
+output: html
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+
+
+
+install.packages("tidyverse")
+install.packages("gapminder")
+
+#| label: setup
+#| include: false
+
+
+# libraries
+library(gapminder)
+library(tidyverse)
+# data
+main_data_unicef <- read.csv("main_data_unicef.csv")
+
+install.packages("ggplot2")
+library("ggplot2")
+
+install.packages("dplyr")
+library(dplyr)
+
+install.packages("plotly")
+  library(plotly)
+
+main_data_unicef %>%
+  ggplot(aes(x = GDP.per.capita, y = Life.expectancy.at.birth.total, color = obs_value)) + 
+  geom_point(size = 1, alpha = 0.8) + 
+  geom_smooth(method = lm, se = FALSE, size = 1.2) + 
+  scale_color_gradient(low = "darkred", high= "black")
+  labs(title = "Relationship between GDP per capita and life expectancy", 
+       x = "GDP per capita", y = "Life expectancy at birth") + 
+  theme(plot.title = element_text(size = 18, face = "bold"),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12))
+```
+
+```{r}
+
+
+        
+# Install and load necessary packages
+  if (!requireNamespace("sf", quietly = TRUE)) {
+    install.packages("sf")
+  }
+  if (!requireNamespace("rnaturalearth", quietly = TRUE)) {
+    install.packages("rnaturalearth")
+  }
+  if (!requireNamespace("rnaturalearthdata", quietly = TRUE)) {
+    install.packages("rnaturalearthdata")
+  }
+  
+  library(sf)
+  library(ggplot2)
+  library(plotly)
+  library(rnaturalearth)
+  library(rnaturalearthdata)
+  
+  # Load viridis package for additional color palettes
+  install.packages("viridis")
+  library(viridis)
+
+# Get a spatial dataset of country boundaries
+  world_map <- ne_countries(scale = "medium", returnclass = "sf")
+  
+  # Assign the main dataset to a new variable with a simpler name
+  main_data <- `main_data_unicef`
+  
+  # Merge the main dataset (main_data) with the world_map dataset
+  merged_data <- world_map %>%
+    left_join(main_data, by = c("name" = "country"))
+  
+  # Create a custom red color palette
+  red_palette <- colorRampPalette(c("#FFC0CB", "#8B0000"))
+  
+  # Create a ggplot object with merged_data
+  world_map_plot <- ggplot(data = merged_data) +
+    geom_sf(aes(fill = obs_value, text = paste("Obs_value:", obs_value, "<br>Country:", name)), size = 0.1) +
+    theme_minimal() +
+    scale_fill_gradientn(colors = red_palette(100),
+                         trans = "log", 
+                         name = "Observation\nValue", labels = scales::comma) +
+    labs()
+  
+  # Convert to interactive plotly object
+  interactive_world_map <- ggplotly(world_map_plot)
+  
+  # Include the interactive plot in R Markdown document
+  interactive_world_map
+```
+
+```{r}
+
+
+  
+  main_data_unicef %>%
+    ggplot(aes(x = year, y = Life.expectancy.at.birth.total, color = Continent)) + 
+    geom_point(size = 1, alpha = 0.8) + 
+    geom_smooth(method = lm, se = FALSE, size = 1.2) + 
+    scale_color_manual(values=c("#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F", "#EDC948", "#B07AA1")) +
+    labs(title = "Relationship between year and life expectancy by continent", 
+         x = "Year", y = "Life expectancy at birth") + 
+    theme(plot.title = element_text(size = 18, face = "bold"),
+          axis.title = element_text(size = 14),
+          axis.text = element_text(size = 12)) +
+    facet_wrap(~Continent)
+    
+    ggplot(main_data_unicef, aes(x=Continent, y=Population, fill=obs_value)) + 
+    geom_bar(stat="identity") +
+    scale_fill_gradientn(colors = red_palette(100),
+                         trans = "log", 
+                         name = "Observation\nValue", 
+                         labels = scales::comma) +
+    xlab("Continent") +
+    ylab("Population") +
+    ggtitle("Population by Continent with Observation Value") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+```{r}
+
+
+
+library(ggplot2)
+
+# List of selected countries
+selected_countries <- c("Azerbaijan", "Bhutan", "Bolivia", "Burma", "Central African Republic", "Chad", "Congo, the Democratic Republic of the", "Djibouti", "Ethiopia")
+
+# Filter data for selected countries
+filtered_data <- main_data_unicef %>%
+  filter(country %in% selected_countries)
+
+# Create the time series chart
+life_expectancy_plot <- ggplot(data = filtered_data, aes(x = year, y = `Life.expectancy.at.birth.total`, group = country, color = country, text = paste("Country:", country, "<br>Year:", year, "<br>Life Expectancy:", `Life.expectancy.at.birth.total`))) +
+  geom_line() +
+  theme_minimal() +
+  labs( x = "Year",
+       y = "Life.expectancy.at.birth.total") +
+  theme(legend.position = "bottom")  # Corrected line
+
+# Display the plot
+print(life_expectancy_plot)
+```
+

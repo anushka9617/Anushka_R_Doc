@@ -1,0 +1,194 @@
+---
+title: "Global Sanitation Accessibility Growth Story (2000-2020)"
+output: html
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+install.packages("tidyverse")
+install.packages("gapminder")
+
+#| label: setup
+#| include: false
+```
+## **Introduction To The Report**
+
+Below is a demonstration of the proportion of the population using sanitation facilities connected to sewer networks and with sewage treated to at least secondary levels worldwide from 2000 to 2020. Global population, GDP per capita, global Inflation, and global life expectancy are the comparison variables with the observation value of the indicator.
+
+## **Scatter Plot**
+
+The scatter plot visualizes the relationship between GDP per capita and life expectancy at birth in different countries across the world, using data from the main_data_unicef dataset. Each point on the plot represents a country and is colored according to its observed value. A linear regression line is also added to the plot, with no standard error bars. 
+
+- The color scale ranges from dark red to black, indicating lower and higher values of the observed variable, respectively.
+
+```{r}
+
+# libraries
+library(gapminder)
+library(tidyverse)
+# data
+main_data_unicef <- read.csv("main_data_unicef.csv")
+
+install.packages("ggplot2")
+library("ggplot2")
+
+install.packages("dplyr")
+library(dplyr)
+
+install.packages("plotly")
+  library(plotly)
+
+main_data_unicef %>%
+  ggplot(aes(x = GDP.per.capita, y = Life.expectancy.at.birth.total, color = obs_value)) + 
+  geom_point(size = 1, alpha = 0.8) + 
+  geom_smooth(method = lm, se = FALSE, size = 1.2) + 
+  scale_color_gradient(low = "darkred", high= "black")
+  labs(title = "Relationship between GDP per capita and life expectancy", 
+       x = "GDP per capita", y = "Life expectancy at birth") + 
+  theme(plot.title = element_text(size = 18, face = "bold"),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12))
+```
+## **World Map**
+The world map above visualizes the UNICEF data on a global scale using geographical boundaries of countries. The map displays the observation value of a selected variable for each country, represented by a color gradient ranging from light to dark red. Countries with higher observation values are shown in darker red shades.
+
+- Hovering over a country on the map displays a tooltip with the name of the country and the corresponding observation value.
+
+```{r}
+
+
+        
+# Install and load necessary packages
+  if (!requireNamespace("sf", quietly = TRUE)) {
+    install.packages("sf")
+  }
+  if (!requireNamespace("rnaturalearth", quietly = TRUE)) {
+    install.packages("rnaturalearth")
+  }
+  if (!requireNamespace("rnaturalearthdata", quietly = TRUE)) {
+    install.packages("rnaturalearthdata")
+  }
+  
+  library(sf)
+  library(ggplot2)
+  library(plotly)
+  library(rnaturalearth)
+  library(rnaturalearthdata)
+  
+  # Load viridis package for additional color palettes
+  install.packages("viridis")
+  library(viridis)
+
+# Get a spatial dataset of country boundaries
+  world_map <- ne_countries(scale = "medium", returnclass = "sf")
+  
+  # Assign the main dataset to a new variable with a simpler name
+  main_data <- `main_data_unicef`
+  
+  # Merge the main dataset (main_data) with the world_map dataset
+  merged_data <- world_map %>%
+    left_join(main_data, by = c("name" = "country"))
+  
+  # Create a custom red color palette
+  red_palette <- colorRampPalette(c("#FFC0CB", "#8B0000"))
+  
+  # Create a ggplot object with merged_data
+  world_map_plot <- ggplot(data = merged_data) +
+    geom_sf(aes(fill = obs_value, text = paste("Obs_value:", obs_value, "<br>Country:", name)), size = 0.1) +
+    theme_minimal() +
+    scale_fill_gradientn(colors = red_palette(100),
+                         trans = "log", 
+                         name = "Observation\nValue", labels = scales::comma) +
+    labs()
+  
+  # Convert to interactive plotly object
+  interactive_world_map <- ggplotly(world_map_plot)
+  
+  # Include the interactive plot in R Markdown document
+  interactive_world_map
+```
+## **Scatter Plot**
+
+- Below are separate scatter plots for all continents as per my data
+
+```{r}
+
+
+  
+  main_data_unicef %>%
+    ggplot(aes(x = year, y = Life.expectancy.at.birth.total, color = Continent)) + 
+    geom_point(size = 1, alpha = 0.8) + 
+    geom_smooth(method = lm, se = FALSE, size = 1.2) + 
+    scale_color_manual(values=c("#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F", "#EDC948", "#B07AA1")) +
+    labs(title = "Relationship between year and life expectancy by continent", 
+         x = "Year", y = "Life expectancy at birth") + 
+    theme(plot.title = element_text(size = 18, face = "bold"),
+          axis.title = element_text(size = 14),
+          axis.text = element_text(size = 12)) +
+    facet_wrap(~Continent)
+```
+## **Bar Graph**
+
+The above graph displays the population of each continent based on the observation value in the UNICEF dataset. The bars are colored by the observation value and are sorted in descending order by population size. The x-axis shows the continents and the y-axis shows the population in logarithmic scale. The legend indicates the range of observation values using a color gradient. The graph clearly shows that Asia has the largest population, followed by Africa and then Europe, while Oceania has the smallest population. The observation values vary across continents, with some continents having a higher concentration of higher or lower values. Overall, the graph provides an insightful visualization of the relationship between population and observation value across continents in the UNICEF dataset.
+
+```{r}
+
+
+
+    ggplot(main_data_unicef, aes(x=Continent, y=Population, fill=obs_value)) + 
+    geom_bar(stat="identity") +
+    scale_fill_gradientn(colors = red_palette(100),
+                         trans = "log", 
+                         name = "Observation\nValue", 
+                         labels = scales::comma) +
+    xlab("Continent") +
+    ylab("Population") +
+    ggtitle("Population by Continent with Observation Value") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+## **Time Series Chart**
+
+The time series chart represents the life expectancy at birth over time for a selection of countries including Azerbaijan, Bhutan, Bolivia, Burma, Central African Republic, Chad, Congo, the Democratic Republic of the, and Djibouti. The y-axis represents the life expectancy at birth and the x-axis represents the years. Each line represents a country and is colored differently. The chart shows how the life expectancy at birth has changed over time for the selected countries. The chart is interactive and hovering over a line displays the country, year, and life expectancy at birth.
+
+```{r}
+
+
+
+library(ggplot2)
+
+# List of selected countries
+selected_countries <- c("Azerbaijan", "Bhutan", "Bolivia", "Burma", "Central African Republic", "Chad", "Congo, the Democratic Republic of the", "Djibouti", "Ethiopia")
+
+# Filter data for selected countries
+filtered_data <- main_data_unicef %>%
+  filter(country %in% selected_countries)
+
+# Create the time series chart
+life_expectancy_plot <- ggplot(data = filtered_data, aes(x = year, y = `Life.expectancy.at.birth.total`, group = country, color = country, text = paste("Country:", country, "<br>Year:", year, "<br>Life Expectancy:", `Life.expectancy.at.birth.total`))) +
+  geom_line() +
+  theme_minimal() +
+  labs( x = "Year",
+       y = "Life.expectancy.at.birth.total") +
+  theme(legend.position = "bottom")  # Corrected line
+
+# Display the plot
+print(life_expectancy_plot)
+```
+
+## **Conclusion**
+
+Based on the plots generated for the UNICEF dataset, we can draw several conclusions.
+
+- The scatter plot between GDP per capita and life expectancy shows a positive relationship, indicating that countries with higher GDP per capita tend to have higher life expectancies. The plot also highlights the disparity between developed and developing countries in terms of GDP and life expectancy.
+
+- The world map plot shows the variation in observation value across different countries. The plot indicates that some regions such as Africa and Asia have a higher proportion of countries with lower observation values.
+
+- The bar plot showing population by continent with observation value indicates that Asia has the highest population, while Africa has a higher proportion of countries with lower observation values.
+
+- Finally, the time series plot for selected countries indicates that there has been a general improvement in life expectancy over time for all the countries shown. However, some countries such as Bhutan and Bolivia show a slower rate of improvement compared to others.
+
+Overall, these plots provide valuable insights into the relationship between different variables and their impact on the well-being of people across different countries. They can be used to guide policy decisions and interventions aimed at improving the quality of life for people around the world.
